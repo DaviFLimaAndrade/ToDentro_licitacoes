@@ -21,10 +21,14 @@ function Selo({ avaliacao, triada }: { avaliacao?: EstadoAvaliacao; triada: bool
 
 function Prazo({ iso }: { iso?: string }) {
   const dias = diasRestantes(iso);
-  const urgente = dias !== null && dias >= 0 && dias <= 3;
-  const texto =
-    dias === null ? dataCurta(iso) : dias <= 0 ? "encerra hoje" : `${dataCurta(iso)} · ${dias} dia${dias === 1 ? "" : "s"}`;
-  return <span className={`prazo ${urgente ? "prazo-urgente" : ""}`}>⏰ {texto}</span>;
+  const nivel = dias === null ? "" : dias <= 3 ? "prazo-urgente" : dias <= 7 ? "prazo-alerta" : "";
+  const quando = dias === null ? "" : dias <= 0 ? "encerra hoje" : `${dias} dia${dias === 1 ? "" : "s"}`;
+  return (
+    <span className={`prazo ${nivel}`} title="Prazo para enviar a proposta">
+      <b>{quando}</b>
+      <span>{dataCurta(iso)}</span>
+    </span>
+  );
 }
 
 function Acao({ avaliacao, aberto, onResumir, onAlternar, resumosRestantes }: Omit<Props, "licitacao">) {
@@ -53,7 +57,7 @@ function Acao({ avaliacao, aberto, onResumir, onAlternar, resumosRestantes }: Om
       return (
         <>
           <button type="button" className="botao-ia" onClick={onResumir}>✦ Resumir edital com IA</button>
-          {resumosRestantes !== null && <span className="mudo pequeno">{resumosRestantes} restantes hoje</span>}
+          {resumosRestantes !== null && <span className="restantes">{resumosRestantes} restantes hoje</span>}
         </>
       );
   }
@@ -77,13 +81,25 @@ export function Cartao(props: Props) {
         <Prazo iso={licitacao.data_encerramento} />
       </div>
       <h3 className="objeto">{encurtar(licitacao.objeto, 150)}</h3>
-      <div className="local">{licitacao.municipio}/{licitacao.uf}</div>
-      <div className="meta">
-        <span>{licitacao.orgao}</span>
-        <span>{licitacao.modalidade}</span>
-        <span>{valorCurto(licitacao.valor_estimado)}</span>
-      </div>
-      {licitacao.motivo_triagem && <div className="triagem">Triagem da IA: {licitacao.motivo_triagem}</div>}
+      <dl className="meta">
+        <div>
+          <dt>Local</dt>
+          <dd>{licitacao.municipio}/{licitacao.uf}</dd>
+        </div>
+        <div>
+          <dt>Valor</dt>
+          <dd>{valorCurto(licitacao.valor_estimado)}</dd>
+        </div>
+        <div className="meta-largo">
+          <dt>Órgão</dt>
+          <dd>{licitacao.orgao}</dd>
+        </div>
+        <div className="meta-largo">
+          <dt>Modalidade</dt>
+          <dd>{licitacao.modalidade}</dd>
+        </div>
+      </dl>
+      {licitacao.motivo_triagem && <p className="triagem"><b>Triagem da IA:</b> {licitacao.motivo_triagem}</p>}
       <div className="acoes">
         <Acao {...props} />
         {pncp && <a className="link-pncp" href={pncp} target="_blank" rel="noreferrer">ver no PNCP ↗</a>}

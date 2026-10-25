@@ -55,6 +55,7 @@ export function App() {
   const [abertos, setAbertos] = useState<Set<string>>(new Set());
   const [painelAberto, setPainelAberto] = useState(false);
   const [tutorial, setTutorial] = useState(false);
+  const [filtrosAbertos, setFiltrosAbertos] = useState(false);
   const botaoPerfil = useRef<HTMLButtonElement>(null);
   const topoLista = useRef<HTMLDivElement>(null);
   const fila = useRef<Promise<void>>(Promise.resolve());
@@ -189,21 +190,33 @@ export function App() {
   const municipiosComAbertas = useMemo(() => municipios.filter((m) => m.total > 0), [municipios]);
   const perfilMudou = perfil !== null && feed !== null && JSON.stringify(perfil) !== perfilDoFeed.current;
 
+  const prazos = [
+    [0, "Qualquer"],
+    [3, "3 dias"],
+    [7, "7 dias"],
+    [15, "15 dias"],
+    [30, "30 dias"],
+  ] as const;
+  const ondes = [
+    ["estado", `Todo o estado de ${status?.escopo.uf ?? "SP"}`],
+    ["regiao", status?.escopo.regiao ?? "Campinas e região"],
+    ["municipio", "Um município"],
+  ] as const;
+
   return (
-    <div className="pagina">
+    <div className="app">
       <header className="barra-topo">
         <div className="barra-topo-dentro">
           <div className="marca">
-            <span className="sobretitulo">Radar de licitações · PNCP</span>
-            <strong>{perfil ? capitalizar(perfil.segmento) : "Licitações abertas"}</strong>
+            <span className="marca-nome">Radar de Licitações</span>
+            <span className="marca-sub">PNCP · dados reais</span>
           </div>
           <div className="topo-acoes">
-            <span className="selo selo-real">Dados reais</span>
-          {uso && <Limites uso={uso} />}
+            {uso && <Limites uso={uso} />}
             <button
               type="button"
               ref={botaoPerfil}
-              className={perfilSalvo ? "botao-secundario" : "botao-vermelho"}
+              className={perfilSalvo ? "botao-topo" : "botao-vermelho"}
               onClick={() => { setPainelAberto(true); fecharTutorial(); }}
             >
               {perfilSalvo ? "Perfil da empresa" : "● Preencher perfil da empresa"}
@@ -212,132 +225,177 @@ export function App() {
         </div>
       </header>
 
-      <div className="cabecalho">
-        <h1>Licitações abertas em {status?.escopo.uf ?? "SP"}</h1>
-        {status?.banco && (
-          <p className="mudo pequeno">
-            {status.banco.total.toLocaleString("pt-BR")} editais recebendo proposta no banco · atualizado em{" "}
-            {new Date(status.banco.ultimo_sync).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })} · fonte: PNCP
-          </p>
-        )}
-      </div>
-
-      <div className="abas" role="tablist">
-        <button type="button" role="tab" aria-selected={aba === "todas"} className={aba === "todas" ? "aba ativa" : "aba"} onClick={() => abrirAba("todas")}>
-          Todas as licitações {lista && <span className="contador">{lista.total.toLocaleString("pt-BR")}</span>}
-        </button>
-        <button type="button" role="tab" aria-selected={aba === "para-voce"} className={aba === "para-voce" ? "aba ativa" : "aba"} onClick={() => abrirAba("para-voce")}>
-          ✦ Para você <span className="contador">IA</span>
-        </button>
-      </div>
-
-      {erro && <p className="erro">{erro}</p>}
-
-      {aba === "todas" ? (
-        <section>
-          <form className="busca" onSubmit={(e) => { e.preventDefault(); mudarFiltros({ q: textoBusca }); }}>
-            <input
-              id="busca-texto"
-              value={textoBusca}
-              onChange={(e) => setTextoBusca(e.target.value)}
-              placeholder="Buscar no objeto, ex.: limpeza predial, merenda, impressão"
-            />
-            {filtros.q && (
-              <button type="button" className="botao-link" onClick={() => { setTextoBusca(""); mudarFiltros({ q: "" }); }}>limpar</button>
-            )}
-            <button type="submit" className="enviar" aria-label="Buscar">↑</button>
-          </form>
-
-          <div className="filtros">
-            <select id="filtro-abrangencia" value={filtros.abrangencia} onChange={(e) => mudarFiltros({ abrangencia: e.target.value as FiltrosLista["abrangencia"] })}>
-              <option value="estado">Todo o estado de SP</option>
-              <option value="regiao">{status?.escopo.regiao ?? "Campinas e região"}</option>
-              <option value="municipio">Um município…</option>
-            </select>
-            {filtros.abrangencia === "municipio" && (
-              <select id="filtro-municipio" value={filtros.municipio} onChange={(e) => mudarFiltros({ municipio: e.target.value })}>
-                <option value="">Escolha o município</option>
-                {municipiosComAbertas.map((m) => (
-                  <option key={m.codigo_ibge} value={m.codigo_ibge}>{m.municipio} ({m.total})</option>
+      <div className="corpo">
+        <aside className={filtrosAbertos ? "lateral" : "lateral fechada"}>
+          {aba === "todas" && (
+            <button type="button" className="filtros-toggle" aria-expanded={filtrosAbertos} onClick={() => setFiltrosAbertos((v) => !v)}>
+              Filtros {resumoFiltros(filtros)}
+              <span aria-hidden>{filtrosAbertos ? "▲" : "▼"}</span>
+            </button>
+          )}
+          {aba === "todas" ? (
+            <section className="bloco">
+              <h2 className="bloco-titulo">Filtros</h2>
+              <fieldset className="grupo">
+                <legend>Onde</legend>
+                {ondes.map(([valor, rotulo]) => (
+                  <label key={valor} className="opcao">
+                    <input type="radio" name="abrangencia" checked={filtros.abrangencia === valor} onChange={() => mudarFiltros({ abrangencia: valor })} />
+                    {rotulo}
+                  </label>
                 ))}
-              </select>
-            )}
-            <select id="filtro-prazo" value={filtros.dias} onChange={(e) => mudarFiltros({ dias: Number(e.target.value) })}>
-              <option value={0}>Qualquer prazo</option>
-              <option value={3}>Encerra em até 3 dias</option>
-              <option value={7}>Até 7 dias</option>
-              <option value={15}>Até 15 dias</option>
-              <option value={30}>Até 30 dias</option>
-            </select>
-            <label className="filtro-check" htmlFor="filtro-me-epp">
-              <input id="filtro-me-epp" type="checkbox" checked={filtros.meEpp} onChange={(e) => mudarFiltros({ meEpp: e.target.checked })} />
-              Só exclusivas para ME/EPP
-            </label>
-          </div>
-          {filtros.meEpp && status?.banco && status.banco.itens_verificados < status.banco.total && (
-            <p className="mudo pequeno">
-              Exclusividade verificada em {status.banco.itens_verificados.toLocaleString("pt-BR")} de {status.banco.total.toLocaleString("pt-BR")} licitações até agora
-              (os itens de cada compra são baixados aos poucos, começando pela região).
+                {filtros.abrangencia === "municipio" && (
+                  <select id="filtro-municipio" value={filtros.municipio} onChange={(e) => mudarFiltros({ municipio: e.target.value })}>
+                    <option value="">Escolha o município</option>
+                    {municipiosComAbertas.map((m) => (
+                      <option key={m.codigo_ibge} value={m.codigo_ibge}>{m.municipio} ({m.total})</option>
+                    ))}
+                  </select>
+                )}
+              </fieldset>
+              <fieldset className="grupo">
+                <legend>Encerra em até</legend>
+                <div className="chips">
+                  {prazos.map(([dias, rotulo]) => (
+                    <button key={dias} type="button" className={filtros.dias === dias ? "chip ativo" : "chip"} aria-pressed={filtros.dias === dias} onClick={() => mudarFiltros({ dias })}>
+                      {rotulo}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset className="grupo">
+                <legend>Pequenas empresas</legend>
+                <label className="opcao">
+                  <input id="filtro-me-epp" type="checkbox" checked={filtros.meEpp} onChange={(e) => mudarFiltros({ meEpp: e.target.checked })} />
+                  Só exclusivas para ME/EPP
+                </label>
+              </fieldset>
+            </section>
+          ) : (
+            <section className="bloco">
+              <h2 className="bloco-titulo">Como funciona</h2>
+              <p className="texto-lateral">A IA lê o objeto de cada licitação e separa só as que são serviço do seu segmento, dentro da sua faixa de valor.</p>
+              {uso && (
+                <p className="texto-lateral">
+                  <b>{Math.max(0, uso.busca.limite - uso.busca.usados)} de {uso.busca.limite}</b> buscas com IA restantes hoje. A busca por texto na aba “Todas” é livre.
+                </p>
+              )}
+            </section>
+          )}
+
+          {perfil && (
+            <section className="bloco bloco-perfil">
+              <h2 className="bloco-titulo">Seu perfil</h2>
+              <dl className="perfil-resumo">
+                <dt>Segmento</dt>
+                <dd>{capitalizar(perfil.segmento)}</dd>
+                <dt>Faixa de valor</dt>
+                <dd>{faixa(perfil)}</dd>
+                {perfil.nao_faz.length > 0 && (
+                  <>
+                    <dt>Não faz</dt>
+                    <dd>{perfil.nao_faz.join(", ")}</dd>
+                  </>
+                )}
+              </dl>
+              <button type="button" className="botao-secundario largo" onClick={() => setPainelAberto(true)}>Editar perfil</button>
+            </section>
+          )}
+
+          {status?.banco && (
+            <p className="rodape-lateral">
+              {status.banco.total.toLocaleString("pt-BR")} editais no banco · atualizado em{" "}
+              {new Date(status.banco.ultimo_sync).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
             </p>
           )}
+        </aside>
 
-          <div ref={topoLista} className="lista-topo">
-            {lista && (
-              <span className="mudo pequeno">
-                {lista.total === 0
-                  ? "Nenhuma licitação com esses filtros."
-                  : `Mostrando ${((pagina - 1) * POR_PAGINA + 1).toLocaleString("pt-BR")}–${Math.min(pagina * POR_PAGINA, lista.total).toLocaleString("pt-BR")} de ${lista.total.toLocaleString("pt-BR")} · ${filtros.q ? "mais relevantes primeiro" : "prazo mais próximo primeiro"}`}
-              </span>
-            )}
-            {carregandoLista && <span className="carregando-mini"><span className="giro" /> carregando</span>}
+        <main className="principal">
+          <div className="principal-topo">
+            <h1>Licitações abertas em {status?.escopo.uf ?? "SP"}</h1>
+            <div className="abas" role="tablist">
+              <button type="button" role="tab" aria-selected={aba === "todas"} className={aba === "todas" ? "aba ativa" : "aba"} onClick={() => abrirAba("todas")}>
+                Todas {lista && <span className="contador">{lista.total.toLocaleString("pt-BR")}</span>}
+              </button>
+              <button type="button" role="tab" aria-selected={aba === "para-voce"} className={aba === "para-voce" ? "aba ativa" : "aba"} onClick={() => abrirAba("para-voce")}>
+                ✦ Para você <span className="contador contador-ia">IA</span>
+              </button>
+            </div>
           </div>
 
-          {lista && grade(lista.itens)}
-          {lista && <Paginacao pagina={pagina} paginas={lista.paginas} onIr={irParaPagina} />}
-        </section>
-      ) : (
-        <section>
-          <p className="mudo">
-            A IA lê o objeto de cada licitação e separa só as que são serviço do seu segmento, dentro da sua faixa de valor.
-            {!perfilSalvo && <> Para isso funcionar bem, <button type="button" className="botao-link" onClick={() => setPainelAberto(true)}>preencha o perfil da empresa</button>.</>}
-          </p>
-          {uso && (
-            <p className="mudo pequeno">
-              Buscas com IA: <b>{Math.max(0, uso.busca.limite - uso.busca.usados)} de {uso.busca.limite}</b> restantes hoje. A busca por texto na aba “Todas” é livre.
-            </p>
-          )}
-          <form className="busca" onSubmit={(e) => { e.preventDefault(); procurarComIa(textoIa); }}>
-            <input id="busca-ia" value={textoIa} onChange={(e) => setTextoIa(e.target.value)} placeholder="Pergunte para a IA, ex.: limpeza hospitalar em Valinhos" />
-            <button type="submit" className="enviar" disabled={!textoIa.trim()} aria-label="Perguntar">↑</button>
-          </form>
-          {perfilMudou && !busca && (
-            <p className="aviso">Você mudou o perfil. <button type="button" className="botao-link" onClick={() => perfil && carregarFeed(perfil)}>Atualizar</button></p>
-          )}
+          {erro && <p className="erro">{erro}</p>}
 
-          {busca ? (
+          {aba === "todas" ? (
             <>
-              <div className="secao-topo">
-                <h2>Resultados para “{busca.pergunta}”</h2>
-                <button type="button" className="botao-link" onClick={() => setBusca(null)}>← voltar</button>
+              <form className="busca" onSubmit={(e) => { e.preventDefault(); mudarFiltros({ q: textoBusca }); }}>
+                <input
+                  id="busca-texto"
+                  value={textoBusca}
+                  onChange={(e) => setTextoBusca(e.target.value)}
+                  placeholder="Buscar no objeto: limpeza predial, merenda, impressão…"
+                />
+                {filtros.q && (
+                  <button type="button" className="botao-link" onClick={() => { setTextoBusca(""); mudarFiltros({ q: "" }); }}>limpar</button>
+                )}
+                <button type="submit" className="botao-primario">Buscar</button>
+              </form>
+
+              <div ref={topoLista} className="lista-topo">
+                {lista && (
+                  <span className="contagem">
+                    {lista.total === 0
+                      ? "Nenhuma licitação com esses filtros."
+                      : <><b>{lista.total.toLocaleString("pt-BR")}</b> licitações · mostrando {((pagina - 1) * POR_PAGINA + 1).toLocaleString("pt-BR")}–{Math.min(pagina * POR_PAGINA, lista.total).toLocaleString("pt-BR")} · {filtros.q ? "mais relevantes primeiro" : "prazo mais próximo primeiro"}</>}
+                  </span>
+                )}
+                {carregandoLista && <span className="carregando-mini"><span className="giro" /> carregando</span>}
               </div>
-              {!busca.resultado && !busca.erro && <Carregando texto="Planejando a busca e fazendo a triagem…" />}
-              {busca.erro && <p className="erro">{busca.erro}</p>}
-              {busca.resultado && <><Contagem itens={busca.resultado.candidatas.length} d={busca.resultado.detalhes} />{grade(busca.resultado.candidatas)}</>}
+
+              {lista && grade(lista.itens)}
+              {lista && <Paginacao pagina={pagina} paginas={lista.paginas} onIr={irParaPagina} />}
             </>
-          ) : carregandoFeed ? (
-            <Carregando texto="Triando as licitações com IA… (na primeira vez leva uns 30 s)" />
-          ) : feed ? (
+          ) : (
             <>
-              <div className="secao-topo"><h2>Em {feed.regiao_nome}</h2></div>
-              <Contagem itens={feed.regiao.length} d={feed.detalhes.regiao} />
-              {feed.regiao.length ? grade(ordenarPorPrazo(feed.regiao)) : <p className="mudo vazio">Nada do seu segmento na região agora.</p>}
-              <div className="secao-topo"><h2>No resto de {status?.escopo.uf ?? "SP"}</h2></div>
-              <Contagem itens={feed.estado.length} d={feed.detalhes.estado} />
-              {feed.estado.length ? grade(ordenarPorPrazo(feed.estado)) : <p className="mudo vazio">Nada no resto do estado.</p>}
+              {!perfilSalvo && (
+                <p className="aviso">
+                  A IA usa o perfil da sua empresa para separar as licitações.{" "}
+                  <button type="button" className="botao-link" onClick={() => setPainelAberto(true)}>Preencher o perfil</button>
+                </p>
+              )}
+              <form className="busca" onSubmit={(e) => { e.preventDefault(); procurarComIa(textoIa); }}>
+                <input id="busca-ia" value={textoIa} onChange={(e) => setTextoIa(e.target.value)} placeholder="Pergunte para a IA: limpeza hospitalar em Valinhos…" />
+                <button type="submit" className="botao-primario" disabled={!textoIa.trim()}>Perguntar</button>
+              </form>
+              {perfilMudou && !busca && (
+                <p className="aviso">Você mudou o perfil. <button type="button" className="botao-link" onClick={() => perfil && carregarFeed(perfil)}>Atualizar a lista</button></p>
+              )}
+
+              {busca ? (
+                <>
+                  <div className="secao-topo">
+                    <h2>Resultados para “{busca.pergunta}”</h2>
+                    <button type="button" className="botao-link" onClick={() => setBusca(null)}>← voltar</button>
+                  </div>
+                  {!busca.resultado && !busca.erro && <Carregando texto="Planejando a busca e fazendo a triagem…" />}
+                  {busca.erro && <p className="erro">{busca.erro}</p>}
+                  {busca.resultado && <><Contagem itens={busca.resultado.candidatas.length} d={busca.resultado.detalhes} />{grade(busca.resultado.candidatas)}</>}
+                </>
+              ) : carregandoFeed ? (
+                <Carregando texto="Triando as licitações com IA… (na primeira vez leva uns 30 s)" />
+              ) : feed ? (
+                <>
+                  <div className="secao-topo"><h2>Em {feed.regiao_nome}</h2></div>
+                  <Contagem itens={feed.regiao.length} d={feed.detalhes.regiao} />
+                  {feed.regiao.length ? grade(ordenarPorPrazo(feed.regiao)) : <p className="vazio">Nada do seu segmento na região agora.</p>}
+                  <div className="secao-topo"><h2>No resto de {status?.escopo.uf ?? "SP"}</h2></div>
+                  <Contagem itens={feed.estado.length} d={feed.detalhes.estado} />
+                  {feed.estado.length ? grade(ordenarPorPrazo(feed.estado)) : <p className="vazio">Nada no resto do estado.</p>}
+                </>
+              ) : null}
             </>
-          ) : null}
-        </section>
-      )}
+          )}
+        </main>
+      </div>
 
       {painelAberto && perfil && (
         <>
@@ -353,14 +411,27 @@ export function App() {
   );
 }
 
+function resumoFiltros(f: FiltrosLista) {
+  const ativos = [f.abrangencia !== "estado", f.dias > 0, f.meEpp].filter(Boolean).length;
+  return ativos ? `(${ativos} ativo${ativos > 1 ? "s" : ""})` : "";
+}
+
+function faixa(p: Perfil) {
+  const fmt = (v: number) => (v >= 1_000_000 ? `R$ ${(v / 1_000_000).toLocaleString("pt-BR")} mi` : `R$ ${Math.round(v / 1000)} mil`);
+  if (p.faixa_valor_min && p.faixa_valor_max) return `${fmt(p.faixa_valor_min)} a ${fmt(p.faixa_valor_max)}`;
+  if (p.faixa_valor_max) return `até ${fmt(p.faixa_valor_max)}`;
+  if (p.faixa_valor_min) return `a partir de ${fmt(p.faixa_valor_min)}`;
+  return "qualquer valor";
+}
+
 function ordenarPorPrazo(itens: Licitacao[]) {
   return [...itens].sort((a, b) => (diasRestantes(a.data_encerramento) ?? 999) - (diasRestantes(b.data_encerramento) ?? 999));
 }
 
 function Contagem({ itens, d }: { itens: number; d: ResultadoBusca["detalhes"] }) {
   return (
-    <p className="mudo pequeno">
-      {itens} {itens === 1 ? "serve" : "servem"} para você · a IA descartou {d.descartados_triagem} que citavam seus termos mas são de outro serviço
+    <p className="contagem">
+      <b>{itens}</b> {itens === 1 ? "serve" : "servem"} para você · a IA descartou {d.descartados_triagem} que citavam seus termos mas são de outro serviço
       {d.fora_da_faixa ? ` · ${d.fora_da_faixa} fora da sua faixa de valor` : ""}
     </p>
   );
