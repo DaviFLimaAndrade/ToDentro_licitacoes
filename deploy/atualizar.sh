@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Atualização diária (cron, 4h): retrato novo do PNCP e itens das licitações novas.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 echo "== $(date -Is) sync"

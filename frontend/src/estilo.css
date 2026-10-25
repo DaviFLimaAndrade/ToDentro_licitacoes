@@ -234,3 +234,5 @@ a:hover { color: var(--acao-escura); }
 .progresso-trilho { height: 8px; background: var(--superficie-2); border: 1px solid var(--borda); border-radius: 999px; overflow: hidden; }
 .progresso-barra { height: 100%; background: var(--acao); border-radius: 999px; transition: width .25s linear; }
 @media (prefers-reduced-motion: reduce) { .progresso-barra { transition: none; } }
+
+.erro-caixa { margin: 0; width: 100%; background: var(--vermelho-fundo); border: 1px solid var(--vermelho-borda); color: var(--vermelho); border-radius: 8px; padding: 9px 12px; font-size: .88rem; font-weight: 600; }

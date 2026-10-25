@@ -57,7 +57,7 @@ function Acao({ avaliacao, aberto, onResumir, onAlternar, resumosRestantes }: Om
     case "erro":
       return (
         <>
-          <span className="erro">{encurtar(avaliacao.erro, 140)}</span>
+          <p className="erro-caixa" role="alert">{avaliacao.erro}</p>
           <button type="button" className="botao-secundario" onClick={onResumir}>Tentar de novo</button>
         </>
       );

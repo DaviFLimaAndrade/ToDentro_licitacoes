@@ -8,10 +8,11 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from radar import db, escopo, limites
+from radar import db, erros, escopo, limites
 from radar.agents import ferramentas
 from radar.agents.buscador import buscar, feed
 from radar.agents.judge import julgar
@@ -28,6 +29,18 @@ FRONTEND_DIST = RAIZ / "frontend" / "dist"
 
 setup_tracing()
 app = FastAPI(title="Radar de Licitações")
+
+
+@app.exception_handler(Exception)
+def _erro_inesperado(request: Request, exc: Exception) -> JSONResponse:
+    log.exception("Erro em %s", request.url.path)
+    return JSONResponse(status_code=500, content={"detail": erros.GENERICO})
+
+
+def _falha(exc: Exception, contexto: str) -> HTTPException:
+    log.warning("Falha em %s: %r", contexto, exc)
+    texto = erros.mensagem(exc)
+    return HTTPException(status_code=429 if texto == erros.LIMITE_IA else 502, detail=texto)
 
 
 class PedidoBusca(BaseModel):
@@ -145,8 +158,8 @@ def feed_inicial(pedido: PedidoFeed) -> dict[str, Any]:
         with span("feed", entrada={"segmento": pedido.perfil.segmento}) as s:
             resultado = feed(pedido.perfil)
             registrar_saida(s, {"regiao": len(resultado["regiao"]), "estado": len(resultado["estado"])})
-    except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise _falha(exc, "feed") from exc
     _anotar(resultado["regiao"])
     _anotar(resultado["estado"])
     return {**resultado, "regiao_nome": escopo.REGIAO_NOME}
@@ -160,8 +173,8 @@ def buscar_licitacoes(pedido: PedidoBusca, request: Request) -> dict[str, Any]:
         with span("busca", entrada=pedido.pergunta) as s:
             candidatas = buscar(pedido.pergunta, pedido.perfil, limite=50, detalhes=detalhes)
             registrar_saida(s, {"aderentes": len(candidatas)})
-    except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise _falha(exc, "busca") from exc
     limites.consumir(chave, "busca")
     return {"candidatas": _anotar(candidatas), "detalhes": detalhes, "uso": limites.situacao(chave)}
 
@@ -188,8 +201,7 @@ def avaliar(pedido: PedidoAvaliacao, request: Request) -> dict[str, Any]:
             tempos["judge_s"] = round(time.perf_counter() - t, 1)
             registrar_saida(raiz, {"aderencia": veredito.aderencia if veredito else None, "tempos": tempos})
     except Exception as exc:
-        log.warning("Falha ao avaliar %s: %s", numero, exc)
-        raise HTTPException(status_code=502, detail=f"Não consegui ler o edital: {exc}") from exc
+        raise _falha(exc, f"avaliar {numero}") from exc
     log.info("avaliar %s: %s", numero, tempos)
     if not tempos.get("cache"):
         limites.consumir(chave, "resumo")

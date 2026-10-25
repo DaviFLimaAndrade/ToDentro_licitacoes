@@ -68,7 +68,7 @@ export function App() {
   const fila = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
-    api.status().then(setStatus).catch((e: Error) => setErro(`Não consegui falar com a API (${e.message}).`));
+    api.status().then(setStatus).catch((e: Error) => setErro(e.message));
     api.uso().then(setUso).catch(() => setUso(null));
     api.municipios().then(setMunicipios).catch(() => setMunicipios([]));
   }, []);
@@ -352,7 +352,7 @@ export function App() {
             </div>
           </div>
 
-          {erro && <p className="erro">{erro}</p>}
+          {erro && <p className="erro-caixa" role="alert">{erro}</p>}
 
           {aba === "todas" ? (
             <>
@@ -404,7 +404,7 @@ export function App() {
                     <button type="button" className="botao-link" onClick={() => setBusca(null)}>← voltar</button>
                   </div>
                   {!busca.resultado && !busca.erro && <BarraProgresso inicio={busca.inicio} estimativaS={10} texto="A IA está planejando a busca e separando o que serve para você…" />}
-                  {busca.erro && <p className="erro">{busca.erro}</p>}
+                  {busca.erro && <p className="erro-caixa" role="alert">{busca.erro}</p>}
                   {busca.resultado && <><Contagem itens={busca.resultado.candidatas.length} d={busca.resultado.detalhes} />{grade(busca.resultado.candidatas)}</>}
                 </>
               ) : carregandoFeed ? (

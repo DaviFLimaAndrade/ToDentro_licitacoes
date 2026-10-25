@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Prepara uma VM Ubuntu (Oracle Cloud Always Free) do zero e sobe o Radar.
 # Uso: bash deploy/setup.sh [dominio]   (sem domínio, responde em http://IP)
 set -euo pipefail
 
