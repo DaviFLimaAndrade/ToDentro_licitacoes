@@ -1,0 +1,15 @@
+{
+  "nome": "Empresa de limpeza (exemplo)",
+  "segmento": "limpeza e conservação predial",
+  "palavras_chave": ["limpeza", "conservação", "asseio", "higienização"],
+  "uf": "SP",
+  "municipio": "Campinas",
+  "codigo_municipio_ibge": "3509502",
+  "faixa_valor_min": 50000,
+  "faixa_valor_max": 600000,
+  "documentos_que_tem": [
+    "certidões de regularidade fiscal e trabalhista",
+    "balanço patrimonial"
+  ],
+  "nao_faz": ["copeiragem", "vigilância", "jardinagem"]
+}

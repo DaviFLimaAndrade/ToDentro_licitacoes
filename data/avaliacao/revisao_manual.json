@@ -1,0 +1,21 @@
+{
+  "_sobre": "Revisão feita por IA, não por humano, em 24/10/2026, lendo objeto e itens no PNCP. Perfil: limpeza e conservação predial; não faz copeiragem, vigilância, jardinagem. Critérios: (1) caixa d'água/reservatórios, ar-condicionado, limpeza urbana e roçada são outro ramo; (2) contrato que exige atividade do 'não faz' como serviço próprio não serve; (3) quando o órgão cadastrou o serviço de limpeza como 'Material' (postos ou áreas em m²) vale o serviço.",
+  "59006460000170-1-000086/2026": {"rotulo": "nao_serve", "motivo": "caixa d'água + dedetização: hidráulica/controle de pragas, outro ramo"},
+  "05587823000189-1-000104/2026": {"rotulo": "nao_serve", "motivo": "exige copeiragem como serviço próprio, que o perfil não faz"},
+  "48031918000124-1-002809/2026": {"rotulo": "nao_serve", "motivo": "roçagem de áreas verdes: jardinagem, que o perfil não faz"},
+  "48031918000124-1-002967/2026": {"rotulo": "nao_serve", "motivo": "limpeza de reservatórios e cisternas: serviço hidráulico/sanitário, outro ramo"},
+  "44720530000180-1-000043/2026": {"rotulo": "nao_serve", "motivo": "limpeza é 41% do valor; o resto é cozinha e apoio escolar"},
+  "63025530000104-1-003866/2026": {"rotulo": "nao_serve", "motivo": "limpeza de caixas e reservatórios d'água: outro ramo"},
+  "60453032000174-1-000265/2026": {"rotulo": "nao_serve", "motivo": "limpeza de reservatórios e caixas d'água: outro ramo"},
+  "49269236000117-1-000036/2026": {"rotulo": "nao_serve", "motivo": "zeladoria urbana multisserviços (reparos de infraestrutura): outro ramo"},
+  "46377800000127-1-004589/2026": {"rotulo": "nao_serve", "motivo": "reservatórios + desinsetização: outro ramo"},
+  "46680500000112-1-000318/2026": {"rotulo": "serve", "motivo": "limpeza e conservação predial cobrada por área em m²; a regra não achou a palavra 'limpeza' nos itens"},
+  "44498467000189-1-000885/2026": {"rotulo": "nao_serve", "motivo": "limpeza de ar-condicionado dentro de instalação e reparo: outro ramo"},
+  "06289000000130-1-000077/2026": {"rotulo": "nao_serve", "motivo": "manutenção preventiva com peças; limpeza é 3% do valor"},
+  "46523163000150-1-000593/2025": {"rotulo": "nao_serve", "motivo": "limpeza urbana com capina e roçada: outro ramo"},
+  "58478652000116-1-000019/2026": {"rotulo": "serve", "motivo": "item único cadastrado como Material, mas a descrição é o próprio serviço de limpeza predial"},
+  "58478652000116-1-000020/2026": {"rotulo": "serve", "motivo": "postos (faxineiro, limpador de vidro, serviços gerais) cadastrados como Material"},
+  "46578514000120-1-000300/2026": {"rotulo": "serve", "motivo": "áreas em m² (banheiros, circulação) cadastradas como Material: formato típico de contrato de limpeza"},
+  "46578514000120-1-000306/2026": {"rotulo": "serve", "motivo": "item genérico 'LOTE 1' sem descrição; o objeto é limpeza e conservação"},
+  "58485897000170-1-000039/2025": {"rotulo": "serve", "motivo": "limpeza predial é o principal; 'algumas funções de copa' são acessórias, não um serviço de copeiragem"}
+}

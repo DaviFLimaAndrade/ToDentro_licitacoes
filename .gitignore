@@ -1,0 +1,39 @@
+# Segredos
+.env
+
+# Notas locais de desenvolvimento
+CLAUDE.md
+.claude/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# Dados gerados (o sync e o enriquecimento recriam)
+data/radar.db
+data/*.db-journal
+data/*.db-wal
+data/cache/
+data/editais/
+logs/
+*.log
+
+# Editor e sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

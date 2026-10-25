@@ -1,0 +1,13 @@
+.git
+.venv
+.env
+**/__pycache__
+.pytest_cache
+*.egg-info
+frontend/node_modules
+frontend/dist
+data/cache
+data/editais
+data/radar.db
+data/*.db-journal
+docs
