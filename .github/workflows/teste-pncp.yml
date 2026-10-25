@@ -30,6 +30,8 @@ jobs:
           testar "proposta (sync)" "https://pncp.gov.br/api/consulta/v1/contratacoes/proposta?dataFinal=20270301&uf=SP&pagina=1&tamanhoPagina=50" 200
           testar "detalhe" "https://pncp.gov.br/api/consulta/v1/orgaos/46068425000133/compras/2026/1135" 200
           testar "arquivos" "https://pncp.gov.br/api/pncp/v1/orgaos/43052497000102/compras/2026/532/arquivos" 200
+          testar "arquivos (2ª compra)" "https://pncp.gov.br/api/pncp/v1/orgaos/46068425000133/compras/2026/1135/arquivos" 200
+          testar "arquivos (3ª compra)" "https://pncp.gov.br/api/pncp/v1/orgaos/48664304000180/compras/2026/243/arquivos" 200
           testar "download PDF" "https://pncp.gov.br/pncp-api/v1/orgaos/43052497000102/compras/2026/532/arquivos/1" 200
           testar "itens" "https://pncp.gov.br/api/pncp/v1/orgaos/96291141000180/compras/2026/6879/itens?pagina=1&tamanhoPagina=500" 200
           echo "::notice title=Resultado::$falhas endpoint(s) com problema"
