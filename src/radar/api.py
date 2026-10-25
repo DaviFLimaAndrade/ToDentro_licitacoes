@@ -37,7 +37,7 @@ class PedidoBusca(BaseModel):
 
 class PedidoAvaliacao(BaseModel):
     numero_controle: str
-    perfil: PerfilEmpresa
+    perfil: PerfilEmpresa | None = None
 
 
 def _anotar(itens: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -184,9 +184,9 @@ def avaliar(pedido: PedidoAvaliacao, request: Request) -> dict[str, Any]:
             ficha = ler(pdf, tempos=tempos)
             tempos["leitor_s"] = round(time.perf_counter() - t, 1)
             t = time.perf_counter()
-            veredito = julgar(pedido.perfil, ficha)
+            veredito = julgar(pedido.perfil, ficha) if pedido.perfil else None
             tempos["judge_s"] = round(time.perf_counter() - t, 1)
-            registrar_saida(raiz, {"aderencia": veredito.aderencia, "tempos": tempos})
+            registrar_saida(raiz, {"aderencia": veredito.aderencia if veredito else None, "tempos": tempos})
     except Exception as exc:
         log.warning("Falha ao avaliar %s: %s", numero, exc)
         raise HTTPException(status_code=502, detail=f"Não consegui ler o edital: {exc}") from exc
@@ -197,7 +197,7 @@ def avaliar(pedido: PedidoAvaliacao, request: Request) -> dict[str, Any]:
     arquivos = detalhe["arquivos"]
     edital = next((a for a in arquivos if "edital" in (a.get("tipo") or "").lower()), arquivos[0] if arquivos else {})
     return {
-        "ficha": ficha.model_dump(), "veredito": veredito.model_dump(), "url_edital": edital.get("url"), "tempos": tempos,
+        "ficha": ficha.model_dump(), "veredito": veredito.model_dump() if veredito else None, "url_edital": edital.get("url"), "tempos": tempos,
         "uso": limites.situacao(chave),
     }
 

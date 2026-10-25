@@ -23,3 +23,24 @@ def test_abre_zip_dentro_de_zip():
 def test_pdf_escaneado():
     assert parece_escaneado("83 caracteres de cabeçalho", paginas=84)
     assert not parece_escaneado("texto " * 500, paginas=3)
+
+
+def test_aceita_pdf_valido_mesmo_com_status_de_erro(tmp_path, monkeypatch):
+    import httpx
+
+    from radar.pncp import client as cl
+
+    def responder(req):
+        if req.url.path.endswith("/1"):
+            return httpx.Response(422, content=b"%PDF-1.7 conteudo")
+        return httpx.Response(422, json={"erro": "invalido"})
+
+    monkeypatch.setattr(cl, "EDITAIS_DIR", tmp_path)
+    c = cl.PNCPClient(usar_cache=False)
+    c._http = httpx.Client(transport=httpx.MockTransport(responder))
+    assert c.baixar_arquivo("https://x/arquivos/1", "edital").read_bytes().startswith(b"%PDF")
+    try:
+        c.baixar_arquivo("https://x/arquivos/2", "outro")
+        assert False, "deveria falhar"
+    except httpx.HTTPStatusError:
+        pass

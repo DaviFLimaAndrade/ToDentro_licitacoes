@@ -211,3 +211,19 @@ a:hover { color: var(--acao-escura); }
   .limites { white-space: normal; }
   .link-pncp { margin-left: 0; }
 }
+
+.apresentacao { display: flex; flex-direction: column; gap: 6px; }
+.apresentacao h1 { margin: 0; font-size: 1.6rem; letter-spacing: -.015em; line-height: 1.25; text-wrap: balance; }
+.apresentacao p { margin: 0; max-width: 72ch; font-size: 1rem; color: var(--texto-2); }
+.convite { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; background: var(--acao-suave); border: 1px solid #b9cdf3; border-radius: var(--raio); padding: 14px 16px; }
+.convite b { font-size: 1rem; color: var(--texto); }
+.convite p { margin: 2px 0 0; color: var(--texto-2); font-size: .92rem; }
+.painel-intro { margin: 0; font-size: .92rem !important; color: var(--texto-2); }
+.veredito-convite { background: var(--acao-suave); border-color: #b9cdf3; color: var(--acao); }
+.veredito-convite p { color: var(--texto-2); }
+.veredito-convite .botao-primario { margin-top: 4px; }
+.principal-topo { border-bottom: 2px solid var(--borda); }
+@media (max-width: 560px) {
+  .apresentacao h1 { font-size: 1.3rem; }
+  .convite .botao-primario { width: 100%; }
+}

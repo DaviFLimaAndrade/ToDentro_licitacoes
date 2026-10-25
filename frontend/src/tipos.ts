@@ -56,7 +56,7 @@ export type Uso = Record<"resumo" | "busca", Cota>;
 
 export interface Avaliacao {
   ficha: Ficha;
-  veredito: Veredito;
+  veredito: Veredito | null;
   url_edital: string | null;
   uso?: Uso;
   tempos?: { leitor_s?: number; judge_s?: number; download_s?: number; modo?: "texto" | "pdf"; cache?: number };

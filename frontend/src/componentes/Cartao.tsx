@@ -9,12 +9,14 @@ interface Props {
   onResumir: () => void;
   onAlternar: () => void;
   resumosRestantes: number | null;
+  onPedirPerfil: () => void;
 }
 
 function Selo({ avaliacao, triada }: { avaliacao?: EstadoAvaliacao; triada: boolean }) {
   if (avaliacao?.estado === "ok") {
-    const a = avaliacao.dados.veredito.aderencia;
-    return <span className={`selo selo-${a}`}>{ROTULO[a]}</span>;
+    const v = avaliacao.dados.veredito;
+    if (!v) return <span className="selo selo-neutro">Edital lido</span>;
+    return <span className={`selo selo-${v.aderencia}`}>{ROTULO[v.aderencia]}</span>;
   }
   return triada ? <span className="selo selo-neutro">Passou na triagem</span> : <span />;
 }
@@ -104,7 +106,7 @@ export function Cartao(props: Props) {
         <Acao {...props} />
         {pncp && <a className="link-pncp" href={pncp} target="_blank" rel="noreferrer">ver no PNCP ↗</a>}
       </div>
-      {aberto && avaliacao?.estado === "ok" && <Resumo licitacao={licitacao} avaliacao={avaliacao.dados} />}
+      {aberto && avaliacao?.estado === "ok" && <Resumo licitacao={licitacao} avaliacao={avaliacao.dados} onPedirPerfil={props.onPedirPerfil} />}
     </article>
   );
 }

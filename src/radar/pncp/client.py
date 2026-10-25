@@ -157,12 +157,15 @@ class PNCPClient:
     def _baixar_com_teto(self, url: str) -> tuple[bytes, str]:
         partes = bytearray()
         with self._http.stream("GET", url, timeout=120.0) as resp:
-            resp.raise_for_status()
             for bloco in resp.iter_bytes():
                 partes.extend(bloco)
                 if len(partes) > MAX_EDITAL_BYTES:
                     raise ValueError(f"Edital com mais de {MAX_EDITAL_BYTES // 1_000_000} MB; abra pelo link do PNCP.")
-            return bytes(partes), resp.headers.get("content-disposition", "")
+            conteudo = bytes(partes)
+            # O PNCP às vezes responde 422 com o arquivo inteiro e válido no corpo.
+            if resp.is_error and conteudo[:4] not in (b"%PDF", b"PK\x03\x04"):
+                resp.raise_for_status()
+            return conteudo, resp.headers.get("content-disposition", "")
 
     def baixar_arquivo(self, url: str, nome_base: str) -> Path:
         EDITAIS_DIR.mkdir(parents=True, exist_ok=True)

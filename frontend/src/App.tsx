@@ -10,6 +10,10 @@ import type {
 } from "./tipos";
 
 const POR_PAGINA = 20;
+const PERFIL_VAZIO: Perfil = {
+  nome: "", segmento: "", palavras_chave: [], uf: "SP", municipio: null, codigo_municipio_ibge: null,
+  faixa_valor_min: null, faixa_valor_max: null, documentos_que_tem: [], nao_faz: [],
+};
 const FILTROS_INICIAIS: FiltrosLista = { q: "", abrangencia: "estado", municipio: "", dias: 0, meEpp: false };
 type Aba = "todas" | "para-voce";
 
@@ -31,8 +35,9 @@ const guardado = {
 };
 
 export function App() {
-  const [perfil, setPerfil] = useState<Perfil | null>(null);
-  const [perfilSalvo, setPerfilSalvo] = useState(() => guardado.ler<Perfil>("radar.perfil") !== null);
+  const [perfil, setPerfil] = useState<Perfil | null>(() => guardado.ler<Perfil>("radar.perfil"));
+  const [rascunho, setRascunho] = useState<Perfil>(PERFIL_VAZIO);
+  const perfilSalvo = perfil !== null;
   const [status, setStatus] = useState<Status | null>(null);
   const [uso, setUso] = useState<Uso | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -61,10 +66,7 @@ export function App() {
   const fila = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
-    const local = guardado.ler<Perfil>("radar.perfil");
-    if (local) setPerfil(local);
-    else api.perfil().then(setPerfil).catch((e: Error) => setErro(`Não consegui falar com a API (${e.message}). O uvicorn está rodando?`));
-    api.status().then(setStatus).catch(() => setStatus(null));
+    api.status().then(setStatus).catch((e: Error) => setErro(`Não consegui falar com a API (${e.message}).`));
     api.uso().then(setUso).catch(() => setUso(null));
     api.municipios().then(setMunicipios).catch(() => setMunicipios([]));
   }, []);
@@ -113,12 +115,18 @@ export function App() {
     if (nova === "para-voce" && perfil && !feed && !carregandoFeed) carregarFeed(perfil);
   }
 
+  function abrirPerfil() {
+    setRascunho(perfil ?? PERFIL_VAZIO);
+    setPainelAberto(true);
+    fecharTutorial();
+  }
+
   function salvarPerfil() {
-    if (!perfil) return;
-    guardado.gravar("radar.perfil", perfil);
-    setPerfilSalvo(true);
+    if (!rascunho.segmento.trim()) return;
+    guardado.gravar("radar.perfil", rascunho);
+    setPerfil(rascunho);
     setPainelAberto(false);
-    if (feed) carregarFeed(perfil);
+    if (aba === "para-voce" || feed) carregarFeed(rascunho);
   }
 
   function irParaPagina(p: number) {
@@ -132,7 +140,6 @@ export function App() {
   }
 
   function resumir(numero: string) {
-    if (!perfil) return;
     const p = perfil;
     setAvaliacoes((a) => ({ ...a, [numero]: { estado: "na-fila" } }));
     fila.current = fila.current.then(async () => {
@@ -181,6 +188,7 @@ export function App() {
           aberto={abertos.has(l.numero_controle)}
           onResumir={() => resumir(l.numero_controle)}
           resumosRestantes={uso ? uso.resumo.limite - uso.resumo.usados : null}
+          onPedirPerfil={abrirPerfil}
           onAlternar={() => alternar(l.numero_controle)}
         />
       ))}
@@ -217,7 +225,7 @@ export function App() {
               type="button"
               ref={botaoPerfil}
               className={perfilSalvo ? "botao-topo" : "botao-vermelho"}
-              onClick={() => { setPainelAberto(true); fecharTutorial(); }}
+              onClick={abrirPerfil}
             >
               {perfilSalvo ? "Perfil da empresa" : "● Preencher perfil da empresa"}
             </button>
@@ -298,7 +306,7 @@ export function App() {
                   </>
                 )}
               </dl>
-              <button type="button" className="botao-secundario largo" onClick={() => setPainelAberto(true)}>Editar perfil</button>
+              <button type="button" className="botao-secundario largo" onClick={abrirPerfil}>Editar perfil</button>
             </section>
           )}
 
@@ -311,8 +319,25 @@ export function App() {
         </aside>
 
         <main className="principal">
+          <div className="apresentacao">
+            <h1>Todas as licitações abertas de {status?.escopo.uf ?? "SP"} num lugar só</h1>
+            <p>
+              O Radar reúne o que está recebendo proposta no PNCP, o portal oficial de compras públicas. Filtre à vontade e peça
+              para a IA ler o edital: ela resume prazo, valor e exigências e diz se vale a pena para a sua empresa.
+            </p>
+          </div>
+
+          {!perfil && (
+            <div className="convite">
+              <div>
+                <b>Conte o que sua empresa faz</b>
+                <p>Sem perfil você vê todas as licitações. Com ele, a IA separa as que servem para você e julga cada edital.</p>
+              </div>
+              <button type="button" className="botao-primario" onClick={abrirPerfil}>Preencher perfil da empresa</button>
+            </div>
+          )}
+
           <div className="principal-topo">
-            <h1>Licitações abertas em {status?.escopo.uf ?? "SP"}</h1>
             <div className="abas" role="tablist">
               <button type="button" role="tab" aria-selected={aba === "todas"} className={aba === "todas" ? "aba ativa" : "aba"} onClick={() => abrirAba("todas")}>
                 Todas {lista && <span className="contador">{lista.total.toLocaleString("pt-BR")}</span>}
@@ -356,12 +381,10 @@ export function App() {
             </>
           ) : (
             <>
-              {!perfilSalvo && (
-                <p className="aviso">
-                  A IA usa o perfil da sua empresa para separar as licitações.{" "}
-                  <button type="button" className="botao-link" onClick={() => setPainelAberto(true)}>Preencher o perfil</button>
-                </p>
-              )}
+              {!perfil ? (
+                <p className="vazio">A aba “Para você” usa o perfil da sua empresa para separar as licitações. Preencha o perfil acima para ver a seleção da IA.</p>
+              ) : (
+              <>
               <form className="busca" onSubmit={(e) => { e.preventDefault(); procurarComIa(textoIa); }}>
                 <input id="busca-ia" value={textoIa} onChange={(e) => setTextoIa(e.target.value)} placeholder="Pergunte para a IA: limpeza hospitalar em Valinhos…" />
                 <button type="submit" className="botao-primario" disabled={!textoIa.trim()}>Perguntar</button>
@@ -392,20 +415,22 @@ export function App() {
                   {feed.estado.length ? grade(ordenarPorPrazo(feed.estado)) : <p className="vazio">Nada no resto do estado.</p>}
                 </>
               ) : null}
+              </>
+              )}
             </>
           )}
         </main>
       </div>
 
-      {painelAberto && perfil && (
+      {painelAberto && (
         <>
           <div className="veu" onClick={() => setPainelAberto(false)} />
-          <PainelPerfil perfil={perfil} onMudar={setPerfil} onSalvar={salvarPerfil} status={status} onFechar={() => setPainelAberto(false)} />
+          <PainelPerfil perfil={rascunho} onMudar={setRascunho} onSalvar={salvarPerfil} onFechar={() => setPainelAberto(false)} />
         </>
       )}
 
       {tutorial && !painelAberto && (
-        <Tutorial alvo={botaoPerfil} onPreencher={() => { fecharTutorial(); setPainelAberto(true); }} onFechar={fecharTutorial} />
+        <Tutorial alvo={botaoPerfil} onPreencher={abrirPerfil} onFechar={fecharTutorial} />
       )}
     </div>
   );

@@ -30,6 +30,6 @@ export const api = {
   municipios: () => pedir<Municipio[]>("/api/municipios"),
   feed: (perfil: Perfil) => pedir<Feed>("/api/feed", { perfil }),
   buscar: (pergunta: string, perfil: Perfil) => pedir<ResultadoBusca>("/api/buscar", { pergunta, perfil }),
-  avaliar: (numero_controle: string, perfil: Perfil) =>
+  avaliar: (numero_controle: string, perfil: Perfil | null) =>
     pedir<Avaliacao>("/api/avaliar", { numero_controle, perfil }),
 };
