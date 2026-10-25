@@ -64,7 +64,7 @@ export interface Avaliacao {
 
 export type EstadoAvaliacao =
   | { estado: "na-fila" }
-  | { estado: "lendo" }
+  | { estado: "lendo"; inicio: number }
   | { estado: "ok"; dados: Avaliacao }
   | { estado: "erro"; erro: string };
 

@@ -227,3 +227,10 @@ a:hover { color: var(--acao-escura); }
   .apresentacao h1 { font-size: 1.3rem; }
   .convite .botao-primario { width: 100%; }
 }
+
+.progresso { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.progresso-linha { display: flex; justify-content: space-between; gap: 10px; font-size: .86rem; color: var(--texto-2); font-weight: 600; }
+.progresso-tempo { color: var(--texto-3); font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.progresso-trilho { height: 8px; background: var(--superficie-2); border: 1px solid var(--borda); border-radius: 999px; overflow: hidden; }
+.progresso-barra { height: 100%; background: var(--acao); border-radius: 999px; transition: width .25s linear; }
+@media (prefers-reduced-motion: reduce) { .progresso-barra { transition: none; } }

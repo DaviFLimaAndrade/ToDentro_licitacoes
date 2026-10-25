@@ -44,3 +44,24 @@ def test_aceita_pdf_valido_mesmo_com_status_de_erro(tmp_path, monkeypatch):
         assert False, "deveria falhar"
     except httpx.HTTPStatusError:
         pass
+
+
+def test_repete_quando_o_pncp_devolve_422_passageiro(tmp_path, monkeypatch):
+    import httpx
+
+    from radar.pncp import client as cl
+
+    chamadas = []
+
+    def responder(req):
+        chamadas.append(1)
+        if len(chamadas) < 3:
+            return httpx.Response(422, json={"message": "erro passageiro"})
+        return httpx.Response(200, content=b"%PDF-1.7 ok")
+
+    monkeypatch.setattr(cl, "EDITAIS_DIR", tmp_path)
+    monkeypatch.setattr(cl.PNCPClient._baixar_com_teto.retry, "wait", lambda *_: 0)
+    c = cl.PNCPClient(usar_cache=False)
+    c._http = httpx.Client(transport=httpx.MockTransport(responder))
+    assert c.baixar_arquivo("https://x/arquivos/1", "edital").read_bytes().startswith(b"%PDF")
+    assert len(chamadas) == 3

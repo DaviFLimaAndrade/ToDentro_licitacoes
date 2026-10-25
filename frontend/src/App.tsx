@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "./api";
 import { Cartao } from "./componentes/Cartao";
 import { Paginacao } from "./componentes/Paginacao";
+import { BarraProgresso } from "./componentes/BarraProgresso";
 import { PainelPerfil } from "./componentes/PainelPerfil";
 import { Tutorial } from "./componentes/Tutorial";
 import { diasRestantes } from "./formato";
@@ -52,7 +53,8 @@ export function App() {
 
   const [feed, setFeed] = useState<Feed | null>(null);
   const [carregandoFeed, setCarregandoFeed] = useState(false);
-  const [busca, setBusca] = useState<{ pergunta: string; resultado?: ResultadoBusca; erro?: string } | null>(null);
+  const [busca, setBusca] = useState<{ pergunta: string; inicio: number; resultado?: ResultadoBusca; erro?: string } | null>(null);
+  const [inicioFeed, setInicioFeed] = useState(0);
   const [textoIa, setTextoIa] = useState("");
   const perfilDoFeed = useRef("");
 
@@ -106,6 +108,7 @@ export function App() {
 
   const carregarFeed = useCallback((p: Perfil) => {
     setCarregandoFeed(true);
+    setInicioFeed(Date.now());
     perfilDoFeed.current = JSON.stringify(p);
     api.feed(p).then(setFeed).catch((e: Error) => setErro(e.message)).finally(() => setCarregandoFeed(false));
   }, []);
@@ -143,7 +146,7 @@ export function App() {
     const p = perfil;
     setAvaliacoes((a) => ({ ...a, [numero]: { estado: "na-fila" } }));
     fila.current = fila.current.then(async () => {
-      setAvaliacoes((a) => ({ ...a, [numero]: { estado: "lendo" } }));
+      setAvaliacoes((a) => ({ ...a, [numero]: { estado: "lendo", inicio: Date.now() } }));
       try {
         const dados = await api.avaliar(numero, p);
         if (dados.uso) setUso(dados.uso);
@@ -167,13 +170,14 @@ export function App() {
 
   async function procurarComIa(pergunta: string) {
     if (!perfil || !pergunta.trim()) return;
-    setBusca({ pergunta });
+    const inicio = Date.now();
+    setBusca({ pergunta, inicio });
     try {
       const resultado = await api.buscar(pergunta, perfil);
       if (resultado.uso) setUso(resultado.uso);
-      setBusca({ pergunta, resultado });
+      setBusca({ pergunta, inicio, resultado });
     } catch (e) {
-      setBusca({ pergunta, erro: (e as Error).message });
+      setBusca({ pergunta, inicio, erro: (e as Error).message });
       api.uso().then(setUso).catch(() => undefined);
     }
   }
@@ -399,12 +403,12 @@ export function App() {
                     <h2>Resultados para “{busca.pergunta}”</h2>
                     <button type="button" className="botao-link" onClick={() => setBusca(null)}>← voltar</button>
                   </div>
-                  {!busca.resultado && !busca.erro && <Carregando texto="Planejando a busca e fazendo a triagem…" />}
+                  {!busca.resultado && !busca.erro && <BarraProgresso inicio={busca.inicio} estimativaS={10} texto="A IA está planejando a busca e separando o que serve para você…" />}
                   {busca.erro && <p className="erro">{busca.erro}</p>}
                   {busca.resultado && <><Contagem itens={busca.resultado.candidatas.length} d={busca.resultado.detalhes} />{grade(busca.resultado.candidatas)}</>}
                 </>
               ) : carregandoFeed ? (
-                <Carregando texto="Triando as licitações com IA… (na primeira vez leva uns 30 s)" />
+                <BarraProgresso inicio={inicioFeed} estimativaS={30} texto="A IA está lendo as licitações da região e do estado…" />
               ) : feed ? (
                 <>
                   <div className="secao-topo"><h2>Em {feed.regiao_nome}</h2></div>
@@ -481,10 +485,6 @@ function Limites({ uso }: { uso: Uso }) {
       ))}
     </span>
   );
-}
-
-function Carregando({ texto }: { texto: string }) {
-  return <p className="carregando"><span className="giro" /> {texto}</p>;
 }
 
 function capitalizar(s: string) {

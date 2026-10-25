@@ -1,5 +1,6 @@
 import { dataCurta, diasRestantes, encurtar, linkPncp, ROTULO, valorCurto } from "../formato";
 import type { EstadoAvaliacao, Licitacao } from "../tipos";
+import { BarraProgresso } from "./BarraProgresso";
 import { Resumo } from "./Resumo";
 
 interface Props {
@@ -36,7 +37,15 @@ function Prazo({ iso }: { iso?: string }) {
 function Acao({ avaliacao, aberto, onResumir, onAlternar, resumosRestantes }: Omit<Props, "licitacao">) {
   switch (avaliacao?.estado) {
     case "lendo":
-      return <span className="lendo"><span className="giro" /> Lendo o edital e julgando… (~10 s; escaneado, ~1 min)</span>;
+      return (
+        <BarraProgresso
+          inicio={avaliacao.inicio}
+          estimativaS={12}
+          texto="Lendo o edital…"
+          estimativaLongaS={75}
+          textoLongo="Edital grande (provavelmente escaneado), lendo as páginas…"
+        />
+      );
     case "na-fila":
       return <span className="lendo">Na fila para leitura…</span>;
     case "ok":

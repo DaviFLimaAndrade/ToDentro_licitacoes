@@ -46,6 +46,12 @@ def _deve_repetir(exc: BaseException) -> bool:
     return False
 
 
+def _download_deve_repetir(exc: BaseException) -> bool:
+    if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code == 422:
+        return True
+    return _deve_repetir(exc)
+
+
 class PNCPClient:
     def __init__(self, timeout: float = 30.0, usar_cache: bool = True) -> None:
         self._http = httpx.Client(timeout=timeout, follow_redirects=True)
@@ -154,6 +160,12 @@ class PNCPClient:
         )
         return dados if isinstance(dados, list) else []
 
+    @retry(
+        retry=retry_if_exception(_download_deve_repetir),
+        wait=wait_exponential(multiplier=1, min=2, max=8),
+        stop=stop_after_attempt(4),
+        reraise=True,
+    )
     def _baixar_com_teto(self, url: str) -> tuple[bytes, str]:
         partes = bytearray()
         with self._http.stream("GET", url, timeout=120.0) as resp:
